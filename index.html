@@ -1,1 +1,632 @@
-準備中...
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>3DS Report 2026-03-26</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0d0d;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    padding: 16px;
+    line-height: 1.5;
+  }
+  a { color: #58a6ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ヘッダー */
+  .header { margin-bottom: 20px; }
+  .header-date {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+  }
+  .header-generated { font-size: 12px; color: #666; }
+
+  /* セクション */
+  .section { margin-bottom: 32px; }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+  }
+  .section-filter { font-size: 12px; color: #888; margin-bottom: 12px; }
+
+  /* テーブル（Top Gainers） */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+  table.gainers {
+    width: 100%;
+    border-collapse: collapse;
+    background: #161b22;
+    border-radius: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  table.gainers th {
+    background: #1f2937;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 8px 10px;
+    text-align: left;
+  }
+  table.gainers td {
+    padding: 8px 10px;
+    border-top: 1px solid #21262d;
+    font-size: 13px;
+  }
+  table.gainers tr:hover td { background: #1e2938; }
+  .ticker-cell { font-weight: 700; color: #ffffff; font-size: 14px; }
+  .country-code { font-size: 11px; color: #888; }
+  .num { text-align: right; }
+  .industry { color: #9ca3af; font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* 変化率カラー */
+  .pct-huge  { color: #ff8c00; font-weight: 700; }
+  .pct-high  { color: #fbbf24; font-weight: 600; }
+  .pct-pos   { color: #4ade80; }
+  .pct-neg   { color: #f87171; }
+
+  /* カード（Day1 / Day2） */
+  .card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .card-header { margin-bottom: 8px; }
+  .card-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .card-ticker { font-size: 20px; font-weight: 800; color: #ffffff; }
+  .card-country { font-size: 13px; color: #9ca3af; }
+  .card-industry { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: #d1d5db;
+  }
+
+  /* OHLCVテーブル */
+  .ohlcv-table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 10px;
+  }
+  .ohlcv-table th {
+    color: #6b7280;
+    font-size: 12px;
+    padding: 4px 8px;
+    text-align: center;
+    border-bottom: 1px solid #21262d;
+  }
+  .ohlcv-table td {
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  /* バッジ行 */
+  .badge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .badge-label { font-size: 12px; color: #6b7280; }
+  .badge {
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-yes { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .badge-no  { background: #1f2937; color: #6b7280; border: 1px solid #374151; }
+
+  /* 詳細ブロック（PR / SEC） */
+  .detail-block {
+    background: #0d1117;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .detail-label { font-size: 12px; color: #9ca3af; font-weight: 600; margin-bottom: 6px; }
+  .news-list, .filings-list {
+    padding-left: 16px;
+    list-style: disc;
+  }
+  .news-list li { font-size: 13px; margin-bottom: 4px; }
+  .filings-list li { font-size: 13px; color: #d1d5db; margin-bottom: 2px; }
+  .provider { color: #6b7280; font-size: 11px; }
+
+  /* 空メッセージ */
+  .empty-box {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  .empty { text-align: center; color: #6b7280; padding: 20px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-date">📅 2026.03.26 木</div>
+  <div class="header-generated">Generated: 2026-03-27 15:33:01 JST</div>
+</div>
+
+<!-- Top Gainers -->
+<div class="section">
+  <div class="section-title">Top Gainers</div>
+  <div class="section-filter">抽出条件: 変化率 +30% 以上（上位20件）</div>
+  <div class="table-wrap">
+    <table class="gainers">
+      <thead>
+        <tr>
+          <th>銘柄名</th><th>国</th><th>価格</th><th>変化率</th>
+          <th>回転率</th><th>RVOL</th><th>浮動株数</th><th>Industry</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="ticker-cell">SATLW</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">1.73</td>
+          <td class="num"><span class="pct-huge">+218.19%</span></td>
+          <td class="num">+0.33%</td>
+          <td class="num">-</td>
+          <td class="num">8395万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">EEIQ</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">8.44</td>
+          <td class="num"><span class="pct-huge">+209.16%</span></td>
+          <td class="num">+13197.48%</td>
+          <td class="num">1653.88</td>
+          <td class="num">84万株</td>
+          <td class="industry">Education & Training Service</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">ANNAW</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">0.66</td>
+          <td class="num"><span class="pct-huge">+166.95%</span></td>
+          <td class="num">+5.09%</td>
+          <td class="num">-</td>
+          <td class="num">953万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">SDAWW</td>
+          <td>🌐 <span class="country-code">NA</span></td>
+          <td class="num">0.19</td>
+          <td class="num"><span class="pct-huge">+162.26%</span></td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">VSA</td>
+          <td>🇨🇳 <span class="country-code">CH</span></td>
+          <td class="num">1.37</td>
+          <td class="num"><span class="pct-huge">+140.35%</span></td>
+          <td class="num">+43.61%</td>
+          <td class="num">2058.13</td>
+          <td class="num">198M株</td>
+          <td class="industry">Education & Training Service</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">SXTPW</td>
+          <td>🌐 <span class="country-code">NA</span></td>
+          <td class="num">0.08</td>
+          <td class="num"><span class="pct-huge">+110.00%</span></td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">NVNIW</td>
+          <td>🌐 <span class="country-code">BR</span></td>
+          <td class="num">0.06</td>
+          <td class="num"><span class="pct-huge">+108.04%</span></td>
+          <td class="num">+0.13%</td>
+          <td class="num">-</td>
+          <td class="num">703万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">FCHL</td>
+          <td>🇸🇬 <span class="country-code">SI</span></td>
+          <td class="num">3.55</td>
+          <td class="num"><span class="pct-huge">+107.60%</span></td>
+          <td class="num">+11251.52%</td>
+          <td class="num">20.13</td>
+          <td class="num">41万株</td>
+          <td class="industry">Education & Training Service</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">CAPTW</td>
+          <td>🇰🇷 <span class="country-code">SO</span></td>
+          <td class="num">0.06</td>
+          <td class="num"><span class="pct-huge">+99.34%</span></td>
+          <td class="num">+0.19%</td>
+          <td class="num">-</td>
+          <td class="num">2386万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">AIFF</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">3.02</td>
+          <td class="num"><span class="pct-huge">+79.76%</span></td>
+          <td class="num">+904.32%</td>
+          <td class="num">8.23</td>
+          <td class="num">1184万株</td>
+          <td class="industry">Software - Application</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">KOD</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">39.76</td>
+          <td class="num"><span class="pct-huge">+74.77%</span></td>
+          <td class="num">+39.02%</td>
+          <td class="num">17.30</td>
+          <td class="num">3343万株</td>
+          <td class="industry">Biotechnology</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">SPWRW</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">0.30</td>
+          <td class="num"><span class="pct-huge">+66.61%</span></td>
+          <td class="num">+0.05%</td>
+          <td class="num">-</td>
+          <td class="num">6125万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">EVLVW</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">0.12</td>
+          <td class="num"><span class="pct-huge">+59.08%</span></td>
+          <td class="num">+0.03%</td>
+          <td class="num">-</td>
+          <td class="num">170M株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">NDLS</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">9.43</td>
+          <td class="num"><span class="pct-huge">+55.61%</span></td>
+          <td class="num">+54.05%</td>
+          <td class="num">35.70</td>
+          <td class="num">307万株</td>
+          <td class="industry">Restaurants</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">OLPX</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">2.01</td>
+          <td class="num"><span class="pct-huge">+51.13%</span></td>
+          <td class="num">+63.13%</td>
+          <td class="num">44.61</td>
+          <td class="num">166M株</td>
+          <td class="industry">Specialty Retail</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">SVRN</td>
+          <td>🌐 <span class="country-code">GR</span></td>
+          <td class="num">0.31</td>
+          <td class="num"><span class="pct-huge">+50.00%</span></td>
+          <td class="num">+167.06%</td>
+          <td class="num">1.45</td>
+          <td class="num">1074万株</td>
+          <td class="industry">Marine Shipping</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">STSSW</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">0.05</td>
+          <td class="num"><span class="pct-high">+49.85%</span></td>
+          <td class="num">+0.51%</td>
+          <td class="num">-</td>
+          <td class="num">2033万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">MKDW</td>
+          <td>🇹🇼 <span class="country-code">TA</span></td>
+          <td class="num">7.80</td>
+          <td class="num"><span class="pct-high">+49.14%</span></td>
+          <td class="num">+140.30%</td>
+          <td class="num">1.22</td>
+          <td class="num">65万株</td>
+          <td class="industry">Auto Parts</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">COCHW</td>
+          <td>🇺🇸 <span class="country-code">UN</span></td>
+          <td class="num">0.07</td>
+          <td class="num"><span class="pct-high">+48.00%</span></td>
+          <td class="num">+0.03%</td>
+          <td class="num">-</td>
+          <td class="num">4578万株</td>
+          <td class="industry"></td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">TBMCR</td>
+          <td>🌐 <span class="country-code">NA</span></td>
+          <td class="num">0.70</td>
+          <td class="num"><span class="pct-high">+45.83%</span></td>
+          <td class="num">-</td>
+          <td class="num">69.29</td>
+          <td class="num">-</td>
+          <td class="industry"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Day1 Target -->
+<div class="section">
+  <div class="section-title">Day1 Target</div>
+  <div class="section-filter">抽出条件: 変化率 +50% 以上 / 出来高 1000万株以上 / Day1陽線</div>
+  
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">EEIQ</span>
+      <span class="card-country">🇺🇸 United States</span>
+    </div>
+    <div class="card-industry">Education & Training Services</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 12.5M</span> <span class="tag">浮動株数 84万株</span> <span class="tag">空売り比率 7.05%</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>4.79</td>
+      <td>12.70</td>
+      <td>4.52</td>
+      <td>8.44</td>
+      <td><span class="pct-huge">+209.16%</span></td>
+      <td>+13197.48%</td>
+      <td>1653.88</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-yes">PR: Yes</span>
+    <span class="badge badge-no">SEC: No</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  <div class="detail-block"><div class="detail-label">PR:</div><ul class="news-list"><li><a href="https://finance.yahoo.com/news/epicquest-education-enters-mou-offer-135429777.html" target="_blank">EpicQuest Education enters MOU to offer masters in management program</a><span class="provider"> (TipRanks)</span></li><li><a href="https://finance.yahoo.com/news/epicquest-education-group-international-first-104850216.html" target="_blank">EpicQuest Education Group International First Half 2025 Earnings: US$0.018 loss per share (vs US$0.26 loss in 1H 2024)</a><span class="provider"> (Simply Wall St.)</span></li></ul></div>
+  <div class="detail-block"><div class="detail-label">SEC:</div><ul class="filings-list"><li>3: 提出</li><li>3: 提出</li><li>3: 提出</li></ul></div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">VSA</span>
+      <span class="card-country">🇨🇳 China</span>
+    </div>
+    <div class="card-industry">Education & Training Services</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 1.5M</span> <span class="tag">浮動株数 198M株</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>0.68</td>
+      <td>1.69</td>
+      <td>0.60</td>
+      <td>1.37</td>
+      <td><span class="pct-huge">+140.35%</span></td>
+      <td>+43.61%</td>
+      <td>2058.13</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-yes">PR: Yes</span>
+    <span class="badge badge-no">SEC: No</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  <div class="detail-block"><div class="detail-label">PR:</div><ul class="news-list"><li><a href="https://finance.yahoo.com/markets/stocks/articles/visionsys-ai-vsa-soars-140-033658184.html" target="_blank">VisionSys AI (VSA) Soars 140% After Exchange Non-Compliance</a><span class="provider"> (Insider Monkey)</span></li><li><a href="https://finance.yahoo.com/news/top-midday-decliners-192756199.html" target="_blank">Top Midday Decliners</a><span class="provider"> (MT Newswires)</span></li><li><a href="https://finance.yahoo.com/news/visionsys-ai-vsa-losses-narrow-153250315.html" target="_blank">VisionSys AI (VSA) Losses Narrow 30.3%, But Margins Miss Hopes for Turnaround</a><span class="provider"> (Simply Wall St.)</span></li></ul></div>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">FCHL</span>
+      <span class="card-country">🇸🇬 Singapore</span>
+    </div>
+    <div class="card-industry">Education & Training Services</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 4.0M</span> <span class="tag">浮動株数 41万株</span> <span class="tag">空売り比率 3.02%</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>3.04</td>
+      <td>4.35</td>
+      <td>2.71</td>
+      <td>3.55</td>
+      <td><span class="pct-huge">+107.60%</span></td>
+      <td>+11251.52%</td>
+      <td>20.13</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-no">PR: No</span>
+    <span class="badge badge-yes">SEC: Yes</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  
+  <div class="detail-block"><div class="detail-label">SEC:</div><ul class="filings-list"><li>F-1: 提出</li><li>6-K: 提出</li></ul></div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">AIFF</span>
+      <span class="card-country">🇺🇸 United States</span>
+    </div>
+    <div class="card-industry">Software - Application</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 47.5M</span> <span class="tag">浮動株数 1184万株</span> <span class="tag">空売り比率 11.55%</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>2.07</td>
+      <td>3.15</td>
+      <td>2.01</td>
+      <td>3.02</td>
+      <td><span class="pct-huge">+79.76%</span></td>
+      <td>+904.32%</td>
+      <td>8.23</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-yes">PR: Yes</span>
+    <span class="badge badge-no">SEC: No</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  <div class="detail-block"><div class="detail-label">PR:</div><ul class="news-list"><li><a href="https://finance.yahoo.com/markets/stocks/articles/bc-most-active-stocks-143018519.html" target="_blank">BC-Most Active Stocks</a><span class="provider"> (Associated Press Finance)</span></li></ul></div>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">KOD</span>
+      <span class="card-country">🇺🇸 United States</span>
+    </div>
+    <div class="card-industry">Biotechnology</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 2.4B</span> <span class="tag">浮動株数 3343万株</span> <span class="tag">空売り比率 17.26%</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>35.68</td>
+      <td>40.46</td>
+      <td>33.50</td>
+      <td>39.76</td>
+      <td><span class="pct-huge">+74.77%</span></td>
+      <td>+39.02%</td>
+      <td>17.30</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-yes">PR: Yes</span>
+    <span class="badge badge-no">SEC: No</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  <div class="detail-block"><div class="detail-label">PR:</div><ul class="news-list"><li><a href="https://finance.yahoo.com/sectors/healthcare/articles/kodiak-sciences-kod-climbs-75-033106683.html" target="_blank">Kodiak Sciences (KOD) Climbs 75% on Stellar Clinical Results</a><span class="provider"> (Insider Monkey)</span></li><li><a href="https://finance.yahoo.com/sectors/healthcare/articles/sector-health-care-stocks-advance-173723352.html" target="_blank">Sector Update: Health Care Stocks Advance Thursday Afternoon</a><span class="provider"> (MT Newswires)</span></li><li><a href="https://finance.yahoo.com/sectors/healthcare/articles/kodiak-shares-rise-positive-results-171747127.html" target="_blank">Update: Kodiak Shares Rise After Positive Results in Diabetic Retinopathy Trial</a><span class="provider"> (MT Newswires)</span></li></ul></div>
+  
+</div>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">OLPX</span>
+      <span class="card-country">🇺🇸 United States</span>
+    </div>
+    <div class="card-industry">Specialty Retail</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 1.3B</span> <span class="tag">浮動株数 166M株</span> <span class="tag">空売り比率 6.13%</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>2.00</td>
+      <td>2.01</td>
+      <td>1.99</td>
+      <td>2.01</td>
+      <td><span class="pct-huge">+51.13%</span></td>
+      <td>+63.13%</td>
+      <td>44.61</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-yes">PR: Yes</span>
+    <span class="badge badge-yes">SEC: Yes</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  <div class="detail-block"><div class="detail-label">PR:</div><ul class="news-list"><li><a href="https://www.fool.com/coverage/stock-market-today/2026/03/26/stock-market-today-march-26-olaplex-shares-surge-after-henkel-agrees-to-usd1-4-billion-buyout/" target="_blank">Stock Market Today, March 26: Olaplex Shares Surge After Henkel Agrees to $1.4 Billion Buyout</a><span class="provider"> (Motley Fool)</span></li><li><a href="https://finance.yahoo.com/markets/stocks/articles/why-olaplex-olpx-stock-soaring-201421908.html" target="_blank">Why Is Olaplex (OLPX) Stock Soaring Today</a><span class="provider"> (StockStory)</span></li><li><a href="https://finance.yahoo.com/markets/stocks/articles/sector-consumer-stocks-retreat-afternoon-195736451.html" target="_blank">Sector Update: Consumer Stocks Retreat Late Afternoon</a><span class="provider"> (MT Newswires)</span></li></ul></div>
+  <div class="detail-block"><div class="detail-label">SEC:</div><ul class="filings-list"><li>8-K: 提出</li></ul></div>
+</div>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <span class="card-ticker">SVRN</span>
+      <span class="card-country">🌐 Greece</span>
+    </div>
+    <div class="card-industry">Marine Shipping</div>
+  </div>
+  <div class="card-tags"><span class="tag">時価総額 10.5M</span> <span class="tag">浮動株数 1074万株</span> <span class="tag">空売り比率 1.41%</span></div>
+  <table class="ohlcv-table">
+    <tr>
+      <th>始値</th><th>高値</th><th>安値</th><th>終値</th><th>変化率</th><th>回転率</th><th>RVOL</th>
+    </tr>
+    <tr>
+      <td>0.16</td>
+      <td>0.31</td>
+      <td>0.16</td>
+      <td>0.31</td>
+      <td><span class="pct-huge">+50.00%</span></td>
+      <td>+167.06%</td>
+      <td>1.45</td>
+    </tr>
+  </table>
+  <div class="badge-row">
+    <span class="badge-label">Day1</span>
+    <span class="badge badge-yes">PR: Yes</span>
+    <span class="badge badge-yes">SEC: Yes</span>
+    <span class="badge badge-no">Offer: No</span>
+  </div>
+  <div class="detail-block"><div class="detail-label">PR:</div><ul class="news-list"><li><a href="https://finance.yahoo.com/markets/stocks/articles/bc-most-active-stocks-143019181.html" target="_blank">BC-Most Active Stocks</a><span class="provider"> (Associated Press Finance)</span></li></ul></div>
+  <div class="detail-block"><div class="detail-label">SEC:</div><ul class="filings-list"><li>6-K: 提出</li><li>6-K: 提出</li><li>3: 提出</li><li>3: 提出</li></ul></div>
+</div>
+</div>
+
+<!-- Day2 Target -->
+<div class="section">
+  <div class="section-title">Day2 Target</div>
+  <div class="section-filter">抽出条件: Day2変化率 -30%〜0% / 前日高値以下</div>
+  <div class="empty-box">対象なし</div>
+</div>
+
+</body>
+</html>
